@@ -5,16 +5,14 @@ import (
 	"math/rand"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/bxcodec/faker/v3"
 	_ "github.com/marcboeker/go-duckdb"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/xitongsys/parquet-go/parquet"
 )
 
 func BenchmarkInserts(b *testing.B) {
-	rand.Seed(time.Now().UnixMicro())
-
 	b.Run("duckdb", func(b *testing.B) {
 		db := mustSetupDuckDB(b)
 		defer db.Close()
@@ -41,8 +39,6 @@ func runInserts(b *testing.B, db *sql.DB) {
 }
 
 func BenchmarkOneInsert(b *testing.B) {
-	rand.Seed(time.Now().UnixMicro())
-
 	b.Run("duckdb", func(b *testing.B) {
 		db := mustSetupDuckDB(b)
 		defer db.Close()
@@ -58,7 +54,17 @@ func BenchmarkOneInsert(b *testing.B) {
 	})
 }
 
-const maxChunk = 100
+func BenchmarkWriteParquetPullIntoDuckDB(b *testing.B) {
+	// test duckdb's trick of writing a parquet file and pulling it into a duckdb table with select from parquet file
+	writeParquet(b, parquet.CompressionCodec_UNCOMPRESSED)
+
+	db := mustSetupDuckDB(b)
+	defer db.Close()
+
+	mustExec(b, db, "CREATE TABLE test_models_parquet AS SELECT * FROM 'data.parquet'")
+}
+
+const maxChunk = 256
 
 func runOneInsert(b *testing.B, db *sql.DB) {
 	data := generateTestData(b.N)
@@ -96,6 +102,7 @@ func mustSetupDuckDB(b *testing.B) *sql.DB {
 	}
 
 	mustExec(b, db, "DROP TABLE IF EXISTS test_models")
+	mustExec(b, db, "DROP TABLE IF EXISTS test_models_parquet")
 	mustExec(b, db, "CREATE TABLE test_models (name VARCHAR, email VARCHAR, age INT, lat FLOAT, key UUID)")
 	mustExec(b, db, "VACUUM")
 

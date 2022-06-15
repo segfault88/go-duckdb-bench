@@ -4,11 +4,9 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"os"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/fxamacker/cbor"
 	"github.com/xitongsys/parquet-go-source/local"
@@ -17,8 +15,6 @@ import (
 )
 
 func BenchmarkWriteToFile(b *testing.B) {
-	rand.Seed(time.Now().UnixMicro())
-
 	b.Run("csv", func(b *testing.B) {
 		data := generateTestData(b.N)
 
