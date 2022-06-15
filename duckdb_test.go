@@ -64,7 +64,17 @@ func BenchmarkWriteParquetPullIntoDuckDB(b *testing.B) {
 	mustExec(b, db, "CREATE TABLE test_models_parquet AS SELECT * FROM 'data.parquet'")
 }
 
-const maxChunk = 256
+func BenchmarkWriteCSVPullIntoDuckDB(b *testing.B) {
+	// test duckdb's trick of writing a csv file and pulling it into a duckdb table with select from csv file
+	writeToCSV(b)
+
+	db := mustSetupDuckDB(b)
+	defer db.Close()
+
+	mustExec(b, db, "CREATE TABLE test_models_csv AS SELECT * FROM 'data.csv'")
+}
+
+const maxChunk = 64
 
 func runOneInsert(b *testing.B, db *sql.DB) {
 	data := generateTestData(b.N)
@@ -103,6 +113,7 @@ func mustSetupDuckDB(b *testing.B) *sql.DB {
 
 	mustExec(b, db, "DROP TABLE IF EXISTS test_models")
 	mustExec(b, db, "DROP TABLE IF EXISTS test_models_parquet")
+	mustExec(b, db, "DROP TABLE IF EXISTS test_models_csv")
 	mustExec(b, db, "CREATE TABLE test_models (name VARCHAR, email VARCHAR, age INT, lat FLOAT, key UUID)")
 	mustExec(b, db, "VACUUM")
 

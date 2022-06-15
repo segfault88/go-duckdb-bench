@@ -14,31 +14,33 @@ import (
 	"github.com/xitongsys/parquet-go/writer"
 )
 
+func writeToCSV(b *testing.B) {
+	data := generateTestData(b.N)
+
+	b.ResetTimer()
+
+	f, err := os.Create("data.csv")
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	writer := csv.NewWriter(f)
+
+	writer.Write([]string{"name", "email", "age", "lat", "key"})
+
+	for _, d := range data {
+		writer.Write([]string{d.Name, d.Email, strconv.Itoa(d.Age), fmt.Sprintf("%f", d.Lat), d.Key})
+	}
+
+	writer.Flush()
+	err = f.Close()
+	if err != nil {
+		b.Fatal(err)
+	}
+}
+
 func BenchmarkWriteToFile(b *testing.B) {
-	b.Run("csv", func(b *testing.B) {
-		data := generateTestData(b.N)
-
-		b.ResetTimer()
-
-		f, err := os.Create("data.csv")
-		if err != nil {
-			b.Fatal(err)
-		}
-
-		writer := csv.NewWriter(f)
-
-		writer.Write([]string{"name", "email", "age", "lat", "key"})
-
-		for _, d := range data {
-			writer.Write([]string{d.Name, d.Email, strconv.Itoa(d.Age), fmt.Sprintf("%f", d.Lat), d.Key})
-		}
-
-		writer.Flush()
-		err = f.Close()
-		if err != nil {
-			b.Fatal(err)
-		}
-	})
+	b.Run("csv", writeToCSV)
 
 	b.Run("json", func(b *testing.B) {
 		data := generateTestData(b.N)
