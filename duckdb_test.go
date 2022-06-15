@@ -36,7 +36,7 @@ func runInserts(b *testing.B, db *sql.DB) {
 	b.ResetTimer()
 
 	for _, d := range data {
-		mustExec(b, db, "INSERT INTO test_models (name, email, age) VALUES (?, ?, ?)", d.Name, d.Email, d.Age)
+		mustExec(b, db, "INSERT INTO test_models (name, email, age, lat, key) VALUES (?, ?, ?, ?, ?)", d.Name, d.Email, d.Age, d.Lat, d.Key)
 	}
 }
 
@@ -74,13 +74,13 @@ func runOneInsert(b *testing.B, db *sql.DB) {
 			chunk = data
 			data = nil
 		}
-		query := "INSERT INTO test_models (name, email, age) VALUES "
+		query := "INSERT INTO test_models (name, email, age, lat, key) VALUES "
 		rows := make([]string, 0, b.N)
 		args := make([]interface{}, 0, b.N*3)
 
 		for _, d := range chunk {
-			rows = append(rows, "(?, ?, ?)")
-			args = append(args, d.Name, d.Email, d.Age)
+			rows = append(rows, "(?, ?, ?, ?, ?)")
+			args = append(args, d.Name, d.Email, d.Age, d.Lat, d.Key)
 		}
 
 		query += strings.Join(rows, ", ")
@@ -96,7 +96,7 @@ func mustSetupDuckDB(b *testing.B) *sql.DB {
 	}
 
 	mustExec(b, db, "DROP TABLE IF EXISTS test_models")
-	mustExec(b, db, "CREATE TABLE test_models (name VARCHAR, email VARCHAR, age INT)")
+	mustExec(b, db, "CREATE TABLE test_models (name VARCHAR, email VARCHAR, age INT, lat FLOAT, key UUID)")
 	mustExec(b, db, "VACUUM")
 
 	return db
@@ -109,7 +109,7 @@ func mustSetupSQLite(b *testing.B) *sql.DB {
 	}
 
 	mustExec(b, db, "DROP TABLE IF EXISTS test_models")
-	mustExec(b, db, "CREATE TABLE test_models (name VARCHAR, email VARCHAR, age INT)")
+	mustExec(b, db, "CREATE TABLE test_models (name VARCHAR, email VARCHAR, age INT, lat FLOAT, key UUID)")
 	mustExec(b, db, "VACUUM")
 
 	return db
@@ -123,9 +123,11 @@ func mustExec(b *testing.B, db *sql.DB, query string, args ...any) {
 }
 
 type TestModel struct {
-	Name  string `faker:"name"`
-	Email string `faker:"email"`
-	Age   int    `faker:"-"`
+	Name  string  `faker:"name" parquet:"name=name, type=BYTE_ARRAY, convertedtype=UTF8"`
+	Email string  `faker:"email" parquet:"name=email, type=BYTE_ARRAY, convertedtype=UTF8"`
+	Age   int     `faker:"-" parquet:"name=age, type=INT64, convertedtype=INT_64"`
+	Lat   float32 `faker:"lat" parquet:"name=lat, type=FLOAT, convertedtype=FLOAT"`
+	Key   string  `faker:"uuid_hyphenated" parquet:"name=name, type=BYTE_ARRAY, convertedtype=UTF8"`
 }
 
 func generateTestData(n int) []TestModel {
