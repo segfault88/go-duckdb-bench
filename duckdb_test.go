@@ -127,7 +127,7 @@ type TestModel struct {
 	Email string  `faker:"email" parquet:"name=email, type=BYTE_ARRAY, convertedtype=UTF8"`
 	Age   int     `faker:"-" parquet:"name=age, type=INT64, convertedtype=INT_64"`
 	Lat   float32 `faker:"lat" parquet:"name=lat, type=FLOAT, convertedtype=FLOAT"`
-	Key   string  `faker:"uuid_hyphenated" parquet:"name=name, type=BYTE_ARRAY, convertedtype=UTF8"`
+	Key   string  `faker:"uuid_hyphenated" parquet:"name=key, type=BYTE_ARRAY, convertedtype=UTF8"`
 }
 
 func generateTestData(n int) []TestModel {
